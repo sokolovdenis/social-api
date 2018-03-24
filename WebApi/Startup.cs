@@ -1,10 +1,7 @@
-﻿using System.Text;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Builder;
+﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.IdentityModel.Tokens;
 using WebApi.DataSources;
 using WebApi.Infrastructure;
 
@@ -19,32 +16,30 @@ namespace WebApi
 
 		public IConfiguration Configuration { get; }
 
-		// This method gets called by the runtime. Use this method to add services to the container.
 		public void ConfigureServices(IServiceCollection services)
 		{
-			services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-				.AddJwtBearer(options =>
-				{
-					options.TokenValidationParameters = new TokenValidationParameters
-					{
-						ValidateIssuer = true,
-						ValidateAudience = true,
-						ValidateLifetime = true,
-						ValidateIssuerSigningKey = true,
-						ValidIssuer = "yourdomain.com",
-						ValidAudience = "yourdomain.com",
-						IssuerSigningKey = new SymmetricSecurityKey(
-							Encoding.UTF8.GetBytes("У попа была собака."))
-					};
-				});
+			services.Configure<Database.Options>(
+				Configuration.GetSection("DataSource"));
 
-			services.Configure<Database.Options>(Configuration.GetSection("DataSource"));
+			services.Configure<JwtAuthenticationService.Options>(
+				Configuration.GetSection("Authentication"));
+
+			JwtAuthenticationService.AddJwtAuthentication(
+				services,
+				Configuration.GetValue<string>("Authentication:Secret"));
+
 			services.AddSingleton<Database>();
 			services.AddSingleton<MigrationDataSource>();
 			services.AddSingleton<UserDataSource>();
+			services.AddSingleton<IdentityDataSource>();
 			services.AddSingleton<MigrationService>();
+			services.AddSingleton<IdentityService>();
+			services.AddSingleton<JwtAuthenticationService>();
 
-			services.AddMvc();
+			services.AddMvc(options =>
+			{
+				options.Filters.Add(new ValidateModelAttribute());
+			});
 		}
 
 		public void Configure(IApplicationBuilder app, IHostingEnvironment env)
@@ -59,7 +54,7 @@ namespace WebApi
 			InitializeDatabase(app);
 		}
 
-		private static void InitializeDatabase(IApplicationBuilder app)
+		private void InitializeDatabase(IApplicationBuilder app)
 		{
 			Database database = app.ApplicationServices.GetService<Database>();
 			database.CreateIfNot().Wait();

@@ -40,6 +40,7 @@ namespace WebApi.Infrastructure
 			async (connection, transaction) =>
 			{
 				await UserDataSource.Deploy_V01(connection, transaction);
+				await IdentityDataSource.Deploy_V01(connection, transaction);
 			}
 		};
 	}
