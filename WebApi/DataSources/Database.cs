@@ -2,44 +2,25 @@
 using System.Data.SqlClient;
 using System.Threading.Tasks;
 using Dapper;
-using Microsoft.Extensions.Options;
 
 namespace WebApi.DataSources
 {
 	public class Database
 	{
-		public class Options
-		{
-			public string Host { get; set; }
-
-			public string Name { get; set; }
-
-			public string User { get; set; }
-
-			public string Password { get; set; }
-
-			public bool IsWindowsAuthentication =>
-				string.IsNullOrEmpty(User) && string.IsNullOrEmpty(Password);
-		}
-
-		private readonly Options _options;
 		private readonly string _connectionString;
 		private readonly string _connectionStringNoDb;
+		private readonly string _name;
 
-		public Database(IOptions<Options> configurationOptions)
+		public Database(string connectionString)
 		{
-			_options = configurationOptions.Value;
+			_connectionString = connectionString;
 
-			SqlConnectionStringBuilder builder = new SqlConnectionStringBuilder();
+			SqlConnectionStringBuilder builder =
+				new SqlConnectionStringBuilder(connectionString);
+			_name = builder.InitialCatalog;
 
-			builder.DataSource = _options.Host;
-			builder.IntegratedSecurity = _options.IsWindowsAuthentication;
-			builder.UserID = _options.User;
-			builder.Password = _options.Password;
+			builder.InitialCatalog = "";
 			_connectionStringNoDb = builder.ToString();
-
-			builder.InitialCatalog = _options.Name;
-			_connectionString = builder.ToString();
 		}
 
 		public async Task ConnectAsync(Func<SqlConnection, Task> action)
@@ -86,9 +67,9 @@ namespace WebApi.DataSources
 				await connection.OpenAsync();
 				await connection.ExecuteAsync(
 					$@"
-						IF (NOT EXISTS (SELECT * FROM master.dbo.sysdatabases WHERE [name] = '{_options.Name}'))
+						IF (NOT EXISTS (SELECT * FROM master.dbo.sysdatabases WHERE [name] = '{_name}'))
 						BEGIN
-							CREATE DATABASE [{_options.Name}];
+							CREATE DATABASE [{_name}];
 						END
 					");
 			}

@@ -18,9 +18,6 @@ namespace WebApi
 
 		public void ConfigureServices(IServiceCollection services)
 		{
-			services.Configure<Database.Options>(
-				Configuration.GetSection("DataSource"));
-
 			services.Configure<JwtAuthenticationService.Options>(
 				Configuration.GetSection("Authentication"));
 
@@ -28,10 +25,13 @@ namespace WebApi
 				services,
 				Configuration.GetValue<string>("Authentication:Secret"));
 
-			services.AddSingleton<Database>();
+			services.AddSingleton(sp => 
+				new Database(Configuration.GetConnectionString("DefaultConnection")));
+
 			services.AddSingleton<MigrationDataSource>();
 			services.AddSingleton<UserDataSource>();
 			services.AddSingleton<IdentityDataSource>();
+
 			services.AddSingleton<MigrationService>();
 			services.AddSingleton<IdentityService>();
 			services.AddSingleton<JwtAuthenticationService>();
