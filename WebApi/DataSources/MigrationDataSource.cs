@@ -1,41 +1,34 @@
-﻿using System;
-using System.Data.SqlClient;
+﻿using System.Data;
 using System.Threading.Tasks;
 using Dapper;
 using WebApi.Models;
 
 namespace WebApi.DataSources
 {
-	public class MigrationDataSource
+	public class MigrationDataSource : DataSource
 	{
-		private readonly string _connectionString;
+		public MigrationDataSource(Database databaseEngine) : base(databaseEngine) { }
 
-		public MigrationDataSource(string connectionString)
+		public async Task<Migration> Up(IDbConnection connection, IDbTransaction transaction)
 		{
-			_connectionString = connectionString ?? throw new ArgumentNullException(nameof(connectionString));
-		}
-
-		public async Task<Migration> Up()
-		{
-			using (var connection = new SqlConnection(_connectionString))
-			{
-				return await connection.QuerySingleAsync<Migration>(
-					"INSERT INTO [Migration] OUTPUT INSERTED.* DEFAULT VALUES;");
-			}
+			return await connection.QuerySingleAsync<Migration>(
+				"INSERT INTO [Migration] OUTPUT INSERTED.* DEFAULT VALUES;", null, transaction);
 		}
 
 		public async Task<Migration> GetLast()
 		{
-			using (var connection = new SqlConnection(_connectionString))
+			Migration migration = null;
+			await Database.ConnectAsync(async (connection) =>
 			{
-				return await connection.QuerySingleOrDefaultAsync<Migration>(
+				migration = await connection.QuerySingleOrDefaultAsync<Migration>(
 					"SELECT TOP 1 * FROM [Migration] ORDER BY Version DESC;");
-			}
+			});
+			return migration;
 		}
 
-		public async Task DeployIfNot()
+		public async Task CreateIfNot()
 		{
-			using (var connection = new SqlConnection(_connectionString))
+			await Database.ConnectAsync(async (connection) =>
 			{
 				await connection.ExecuteAsync($@"
 					IF (NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'Migration'))
@@ -50,7 +43,7 @@ namespace WebApi.DataSources
 						FOR [Created];
 					END
 				");
-			}
+			});
 		}
 	}
 }

@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
+using WebApi.DataSources;
+using WebApi.Infrastructure;
 
 namespace WebApi
 {
@@ -36,20 +38,34 @@ namespace WebApi
 					};
 				});
 
+			services.Configure<Database.Options>(Configuration.GetSection("DataSource"));
+			services.AddSingleton<Database>();
+			services.AddSingleton<MigrationDataSource>();
+			services.AddSingleton<UserDataSource>();
+			services.AddSingleton<MigrationService>();
+
 			services.AddMvc();
 		}
 
-		// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
 		public void Configure(IApplicationBuilder app, IHostingEnvironment env)
 		{
 			if (env.IsDevelopment())
 			{
 				app.UseDeveloperExceptionPage();
 			}
-
 			app.UseAuthentication();
-
 			app.UseMvc();
+
+			InitializeDatabase(app);
+		}
+
+		private static void InitializeDatabase(IApplicationBuilder app)
+		{
+			Database database = app.ApplicationServices.GetService<Database>();
+			database.CreateIfNot().Wait();
+
+			MigrationService migrationService = app.ApplicationServices.GetService<MigrationService>();
+			migrationService.Deploy().Wait();
 		}
 	}
 }

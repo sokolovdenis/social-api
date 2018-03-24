@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Data.SqlClient;
 using System.Threading.Tasks;
 using WebApi.DataSources;
 using WebApi.Models;
@@ -7,31 +8,39 @@ namespace WebApi.Infrastructure
 {
 	public class MigrationService
 	{
-		public MigrationService(MigrationDataSource mds)
+		private readonly MigrationDataSource _migrationService;
+		private readonly Database _dataSource;
+
+		public MigrationService(MigrationDataSource mds, Database ds)
 		{
-			_mds = mds ?? throw new ArgumentNullException(nameof(mds));
+			_migrationService = mds ?? throw new ArgumentNullException(nameof(mds));
+			_dataSource = ds ?? throw new ArgumentNullException(nameof(ds));
 		}
 
 		public async Task Deploy()
 		{
-			// TODO: всё в транзакцию
+			await _migrationService.CreateIfNot();
 
-			await _mds.DeployIfNot();
-
-			Migration migration = await _mds.GetLast();
+			Migration migration = await _migrationService.GetLast();
 			int version = migration?.Version ?? 0;
 
-			for (var i = version; i<_deployProcList.Length; i++)
+			for (var i = version; i < _deployProcList.Length; i++)
 			{
-				await _deployProcList[i]();
-				await _mds.Up();
+				await _dataSource.ConnectWithTransactionAsync(async (connection, transaction) =>
+				{
+					await _deployProcList[i](connection, transaction);
+					await _migrationService.Up(connection, transaction);
+				});
 			}
 		}
 
-		private readonly Func<Task>[] _deployProcList = new Func<Task>[]
+		private readonly Func<SqlConnection, SqlTransaction, Task>[] _deployProcList
+			= new Func<SqlConnection, SqlTransaction, Task>[]
 		{
+			async (connection, transaction) =>
+			{
+				await UserDataSource.Deploy_V01(connection, transaction);
+			}
 		};
-
-		private readonly MigrationDataSource _mds;
 	}
 }

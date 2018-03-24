@@ -1,26 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data.SqlClient;
+using System.Data;
 using System.Threading.Tasks;
 using Dapper;
 using WebApi.Models;
 
 namespace WebApi.DataSources
 {
-	public class UserDataSource
+	public class UserDataSource : DataSource
 	{
-		private readonly string _connectionString;
-
-		public UserDataSource(string connectionString)
-		{
-			_connectionString = connectionString ?? throw new ArgumentNullException(nameof(connectionString));
-		}
+		public UserDataSource(Database database) : base(database) { }
 
 		public async Task<User> Create(string name, string info, DateTime birthday)
 		{
-			using (var connection = new SqlConnection(_connectionString))
+			User user = null;
+			await Database.ConnectAsync(async (connection) =>
 			{
-				return await connection.QuerySingleAsync<User>($@"
+				user = await connection.QuerySingleAsync<User>($@"
 						INSERT INTO [User] ([Name], [Info], [Birthday])
 						OUTPUT INSERTED.*
 						VALUES (@Name, @Info, @Birthday);
@@ -31,36 +27,42 @@ namespace WebApi.DataSources
 						Info = info,
 						Birthday = birthday
 					});
-			}
+			});
+			return user;
 		}
 
 		public async Task<User> Read(int id)
 		{
-			using (var connection = new SqlConnection(_connectionString))
+			User user = null;
+			await Database.ConnectAsync(async (connection) =>
 			{
-				return await connection.QuerySingleAsync<User>(
+				user = await connection.QuerySingleAsync<User>(
 					"SELECT * FROM [User] WHERE [Id] = @Id;",
 					new
 					{
 						Id = id
 					});
-			}
+			});
+			return user;
 		}
 
 		public async Task<IEnumerable<User>> Read()
 		{
-			using (var connection = new SqlConnection(_connectionString))
+			IEnumerable<User> users = null;
+			await Database.ConnectAsync(async (connection) =>
 			{
-				return await connection.QueryAsync<User>(
+				users = await connection.QueryAsync<User>(
 					"SELECT * FROM [User]");
-			}
+			});
+			return users;
 		}
 
 		public async Task<User> Update(int id, string name, string info, DateTime birthday)
 		{
-			using (var connection = new SqlConnection(_connectionString))
+			User user = null;
+			await Database.ConnectAsync(async (connection) =>
 			{
-				return await connection.QuerySingleAsync<User>($@"
+				user = await connection.QuerySingleAsync<User>($@"
 						UPDATE [User] SET [Name] = @Name, [Info] = @Info, [Birthday] = @Birthday
 						OUTPUT INSERTED.*
 						WHERE [Id] = @Id;
@@ -72,41 +74,40 @@ namespace WebApi.DataSources
 						Info = info,
 						Birthday = birthday
 					});
-			}
+			});
+			return user;
 		}
 
 		public async Task<User> Delete(int id)
 		{
-			using (var connection = new SqlConnection(_connectionString))
+			User user = null;
+			await Database.ConnectAsync(async (connection) =>
 			{
-				return await connection.QuerySingleAsync<User>($@"
-					DELETE FROM [User]
-					OUTPUT DELETED.*
-					WHERE [Id] = @Id;
-				",
+				user = await connection.QuerySingleAsync<User>($@"
+						DELETE FROM [User]
+						OUTPUT DELETED.*
+						WHERE [Id] = @Id;
+					",
 					new
 					{
 						Id = id
 					});
-			}
+			});
+			return user;
 		}
 
-		public async Task Deploy_V01()
+		public static async Task Deploy_V01(IDbConnection connection, IDbTransaction transaction)
 		{
-			using (var connection = new SqlConnection(_connectionString))
-			{
-				await connection.ExecuteAsync($@"
-					CREATE TABLE [User](
+			await connection.ExecuteAsync($@"
+					CREATE TABLE [User] (
 						[Id] [int] IDENTITY(1,1) NOT NULL,
 						[Name] [nvarchar](50) NOT NULL,
 						[Info] [nvarchar](500) NOT NULL,
 						[Birthday] [date] NOT NULL,
-					 CONSTRAINT [PK_User] PRIMARY KEY CLUSTERED 
-					(
-						[Id] ASC
-					);
-				");
-			}
+						CONSTRAINT [PK_User] PRIMARY KEY CLUSTERED ([Id] ASC)
+					);",
+				null,
+				transaction);
 		}
 	}
 }
