@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Swashbuckle.AspNetCore.Swagger;
 using WebApi.DataSources;
 using WebApi.Infrastructure;
 
@@ -39,6 +41,12 @@ namespace WebApi
 			services.AddMvc(options =>
 			{
 				options.Filters.Add(new ValidateModelAttribute());
+				options.InputFormatters.RemoveType<JsonPatchInputFormatter>();
+			});
+
+			services.AddSwaggerGen(c =>
+			{
+				c.SwaggerDoc("v1", new Info { Title = "Social API", Version = "v1" });
 			});
 		}
 
@@ -50,6 +58,13 @@ namespace WebApi
 			}
 			app.UseAuthentication();
 			app.UseMvc();
+
+			app.UseSwagger();
+			app.UseSwaggerUI(c =>
+			{
+				c.SwaggerEndpoint("/swagger/v1/swagger.json", "Social API V1");
+				c.SupportedSubmitMethods(new SubmitMethod[0]); // disable Try button
+			});
 
 			InitializeDatabase(app);
 		}
