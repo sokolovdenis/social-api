@@ -33,6 +33,8 @@ namespace WebApi
 			services.AddSingleton<MigrationDataSource>();
 			services.AddSingleton<UserDataSource>();
 			services.AddSingleton<IdentityDataSource>();
+			services.AddSingleton<PostDataSource>();
+			services.AddSingleton<FollowDataSource>();
 
 			services.AddSingleton<MigrationService>();
 			services.AddSingleton<IdentityService>();

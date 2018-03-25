@@ -41,6 +41,8 @@ namespace WebApi.Infrastructure
 			{
 				await UserDataSource.Deploy_V01(connection, transaction);
 				await IdentityDataSource.Deploy_V01(connection, transaction);
+				await PostDataSource.Deploy_V01(connection, transaction);
+				await FollowDataSource.Deploy_V01(connection, transaction);
 			}
 		};
 	}

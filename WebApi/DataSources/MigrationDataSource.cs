@@ -35,12 +35,8 @@ namespace WebApi.DataSources
 					BEGIN
 						CREATE TABLE [Migration] (
 							[Version] [INT] IDENTITY(1,1) NOT NULL,
-							[Created] [DATETIME2](7) NOT NULL
+							[Created] [DATETIME2](7) NOT NULL DEFAULT (SYSUTCDATETIME())
 						);
-						ALTER TABLE [Migration]
-						ADD CONSTRAINT [DF_Migration_Created]
-						DEFAULT (SYSUTCDATETIME())
-						FOR [Created];
 					END
 				");
 			});
