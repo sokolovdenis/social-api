@@ -83,10 +83,12 @@ namespace WebApi.DataSources
 			User user = null;
 			await Database.ConnectAsync(async (connection) =>
 			{
+				// Deleting from [Follow] table is required because SQL Server does not support multiple cascade paths.
 				user = await connection.QuerySingleAsync<User>($@"
 						DELETE FROM [User]
 						OUTPUT DELETED.*
 						WHERE [Id] = @Id;
+						DELETE FROM [Follow] WHERE [FollowerId] = @Id OR [FollowingId] = @Id;
 					",
 					new
 					{

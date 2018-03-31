@@ -55,7 +55,7 @@ namespace WebApi.DataSources
 						[Salt] [binary](32) NOT NULL,
 						[Hash] [binary](32) NOT NULL,
 						CONSTRAINT [PK_Identity] PRIMARY KEY CLUSTERED ([Id] ASC),
-						CONSTRAINT [FK_Identity_User] FOREIGN KEY ([UserId]) REFERENCES [User]([Id])
+						CONSTRAINT [FK_Identity_User] FOREIGN KEY ([UserId]) REFERENCES [User]([Id]) ON DELETE CASCADE
 					);",
 				null,
 				transaction);

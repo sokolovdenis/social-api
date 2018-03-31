@@ -91,7 +91,7 @@ namespace WebApi.DataSources
 						[Text] [nvarchar](500) NOT NULL,
 						[DateTime] [datetime] NOT NULL DEFAULT (SYSUTCDATETIME()),
 						CONSTRAINT [PK_Post] PRIMARY KEY NONCLUSTERED ([Id]),
-						CONSTRAINT [FK_Post_User] FOREIGN KEY ([UserId]) REFERENCES [User]([Id])
+						CONSTRAINT [FK_Post_User] FOREIGN KEY ([UserId]) REFERENCES [User]([Id]) ON DELETE CASCADE
 					);
 					CREATE CLUSTERED INDEX [IX_Post_UserId_DateTime] ON [Post] ([UserId] ASC, [DateTime] DESC);",
 				null,
