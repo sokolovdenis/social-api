@@ -57,6 +57,8 @@ namespace WebApi
 			{
 				c.SwaggerDoc("v1", new Info { Title = "Social API", Version = "v1" });
 			});
+
+			services.AddCors();
 		}
 
 		public void Configure(IApplicationBuilder app, IHostingEnvironment env)
@@ -66,6 +68,12 @@ namespace WebApi
 				app.UseDeveloperExceptionPage();
 			}
 			app.UseAuthentication();
+
+			app.UseCors(builder => builder
+				.AllowAnyOrigin()
+				.AllowAnyMethod()
+				.AllowAnyHeader()
+			);
 
 			app.UseMvc();
 
