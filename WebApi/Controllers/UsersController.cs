@@ -14,40 +14,52 @@ namespace WebApi.Controllers
 	public class UsersController : Controller
 	{
 		private readonly UserDataSource _userDataSource;
+		private readonly FollowDataSource _followDataSource;
 
-		public UsersController(UserDataSource uds)
+		public UsersController(UserDataSource uds, FollowDataSource fds)
 		{
 			_userDataSource = uds ?? throw new ArgumentNullException(nameof(uds));
+			_followDataSource = fds ?? throw new ArgumentNullException(nameof(fds));
 		}
 
-		[Route("me")]
 		[HttpGet]
+		[Route("me")]
 		public async Task<IActionResult> GetMe()
 		{
-			int userId = this.GetCurrentUserId();
-			User user = await _userDataSource.Read(userId);
+			int currentUserId = this.GetCurrentUserId();
+			User user = await _userDataSource.Read(currentUserId);
 			return Ok(user);
 		}
 
-		[Route("me")]
 		[HttpDelete]
+		[Route("me")]
 		public async Task<IActionResult> DeleteMe()
 		{
-			int userId = this.GetCurrentUserId();
-			User user = await _userDataSource.Delete(userId);
+			int currentUserId = this.GetCurrentUserId();
+			await _userDataSource.Delete(currentUserId);
+			return Ok();
+		}
+
+		[HttpPut]
+		[Route("me")]
+		public async Task<IActionResult> ModifyMe(ModifyMeRequest request)
+		{
+			int currentUserId = this.GetCurrentUserId();
+			User user = await _userDataSource.Update(
+				currentUserId, request.Name, request.Info, request.Birthday);
 			return Ok(user);
 		}
 
-		[Route("{id}")]
 		[HttpGet]
+		[Route("{id}")]
 		public async Task<IActionResult> Get(int id)
 		{
 			User user = await _userDataSource.Read(id);
 			return Ok(user);
 		}
 
-		[Route("")]
 		[HttpGet]
+		[Route("")]
 		public async Task<IActionResult> GetAll()
 		{
 			IEnumerable<User> users = await _userDataSource.Read();
