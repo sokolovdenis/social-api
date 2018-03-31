@@ -10,7 +10,7 @@ namespace WebApi.DataSources
 	{
 		public PostDataSource(Database database) : base(database) { }
 
-		public async Task<IEnumerable<Post>> Read(int userId, int skip, int count)
+		public async Task<IEnumerable<Post>> ReadWallAsync(int userId, int skip, int count)
 		{
 			IEnumerable<Post> posts = null;
 			await Database.ConnectAsync(async (connection) =>
@@ -36,7 +36,7 @@ namespace WebApi.DataSources
 			return posts;
 		}
 
-		public async Task<IEnumerable<Post>> ReadFeed(int userId, int skip, int count)
+		public async Task<IEnumerable<Post>> ReadFeedAsync(int userId, int skip, int count)
 		{
 			IEnumerable<Post> posts = null;
 			await Database.ConnectAsync(async (connection) =>
