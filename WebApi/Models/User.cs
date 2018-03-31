@@ -10,6 +10,8 @@ namespace WebApi.Models
 
 		public string Info { get; set; }
 
+		public string ImageUrl { get; set; }
+
 		public DateTime Birthday { get; set; }
 	}
 }

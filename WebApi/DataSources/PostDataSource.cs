@@ -82,6 +82,26 @@ namespace WebApi.DataSources
 			return post;
 		}
 
+		public async Task<Post> UpdateImage(int id, int userId, string imageUrl)
+		{
+			Post post = null;
+			await Database.ConnectAsync(async (connection) =>
+			{
+				post = await connection.QuerySingleAsync<Post>($@"
+						UPDATE [Post] SET [ImageUrl] = @ImageUrl
+						OUTPUT INSERTED.*
+						WHERE [Id] = @Id AND [UserId] = @UserId AND [ImageUrl] IS NULL;
+					",
+					new
+					{
+						Id = id,
+						UserId = userId,
+						ImageUrl = imageUrl
+					});
+			});
+			return post;
+		}
+
 		public static async Task Deploy_V01(IDbConnection connection, IDbTransaction transaction)
 		{
 			await connection.ExecuteAsync($@"
@@ -89,6 +109,7 @@ namespace WebApi.DataSources
 						[Id] [int] IDENTITY(1,1) NOT NULL,
 						[UserId] [int] NOT NULL,
 						[Text] [nvarchar](500) NOT NULL,
+						[ImageUrl] [nvarchar](max) NULL,
 						[DateTime] [datetime] NOT NULL DEFAULT (SYSUTCDATETIME()),
 						CONSTRAINT [PK_Post] PRIMARY KEY NONCLUSTERED ([Id]),
 						CONSTRAINT [FK_Post_User] FOREIGN KEY ([UserId]) REFERENCES [User]([Id]) ON DELETE CASCADE

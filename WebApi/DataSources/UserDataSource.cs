@@ -78,6 +78,25 @@ namespace WebApi.DataSources
 			return user;
 		}
 
+		public async Task<User> UpdateImageUrl(int id, string imageUrl)
+		{
+			User user = null;
+			await Database.ConnectAsync(async (connection) =>
+			{
+				user = await connection.QuerySingleAsync<User>($@"
+						UPDATE [User] SET [ImageUrl] = @ImageUrl
+						OUTPUT INSERTED.*
+						WHERE [Id] = @Id;
+					",
+					new
+					{
+						Id = id,
+						ImageUrl = imageUrl
+					});
+			});
+			return user;
+		}
+
 		public async Task<User> Delete(int id)
 		{
 			User user = null;
@@ -105,6 +124,7 @@ namespace WebApi.DataSources
 						[Id] [int] IDENTITY(1,1) NOT NULL,
 						[Name] [nvarchar](50) NOT NULL,
 						[Info] [nvarchar](500) NOT NULL,
+						[ImageUrl] [nvarchar](max) NULL,
 						[Birthday] [date] NOT NULL,
 						CONSTRAINT [PK_User] PRIMARY KEY CLUSTERED ([Id] ASC)
 					);",

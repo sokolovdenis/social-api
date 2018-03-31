@@ -58,6 +58,8 @@ namespace WebApi.Infrastructure
 				{
 					configureOptions.TokenValidationParameters = new TokenValidationParameters
 					{
+						ValidateAudience = false,
+						ValidateIssuer = false,
 						ValidateLifetime = true,
 						ValidateIssuerSigningKey = true,
 						IssuerSigningKey = new SymmetricSecurityKey(secretBytes)

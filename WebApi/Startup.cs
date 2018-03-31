@@ -23,12 +23,18 @@ namespace WebApi
 			services.Configure<JwtAuthenticationService.Options>(
 				Configuration.GetSection("Authentication"));
 
+			services.Configure<ImageProcessingService.Options>(
+				Configuration.GetSection("ImageProcessing"));
+
 			JwtAuthenticationService.AddJwtAuthentication(
 				services,
 				Configuration.GetValue<string>("Authentication:Secret"));
 
 			services.AddSingleton(sp => 
 				new Database(Configuration.GetConnectionString("DefaultConnection")));
+
+			services.AddSingleton(sp =>
+				new AzureStorage(Configuration.GetConnectionString("StorageConnection")));
 
 			services.AddSingleton<MigrationDataSource>();
 			services.AddSingleton<UserDataSource>();
@@ -38,6 +44,7 @@ namespace WebApi
 
 			services.AddSingleton<MigrationService>();
 			services.AddSingleton<IdentityService>();
+			services.AddSingleton<ImageProcessingService>();
 			services.AddSingleton<JwtAuthenticationService>();
 
 			services.AddMvc(options =>
@@ -59,6 +66,7 @@ namespace WebApi
 				app.UseDeveloperExceptionPage();
 			}
 			app.UseAuthentication();
+
 			app.UseMvc();
 
 			app.UseSwagger();
