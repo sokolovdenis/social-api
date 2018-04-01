@@ -1,84 +1,71 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using WebApi.DataSources;
-using WebApi.Infrastructure;
 using WebApi.Models;
 
 namespace WebApi.Controllers
 {
 	[Authorize]
-	[Route("api/users")]
+	[Route("api/users/{userId}")]
 	public class PostsController : Controller
 	{
-		private PostDataSource _postDataSource;
-		private readonly ImageProcessingService _imageService;
-		private readonly AzureStorage _storageService;
+		private readonly PostDataSource _postDataSource;
+		private readonly UserDataSource _userDataSource;
 
-		public PostsController(PostDataSource pds, ImageProcessingService imgSrv, AzureStorage stSrv)
+		public PostsController(PostDataSource pds, UserDataSource uds)
 		{
 			_postDataSource = pds ?? throw new ArgumentNullException(nameof(pds));
-			_imageService = imgSrv ?? throw new ArgumentNullException(nameof(imgSrv));
-			_storageService = stSrv ?? throw new ArgumentNullException(nameof(stSrv));
+			_userDataSource = uds ?? throw new ArgumentNullException(nameof(uds));
 		}
 
+		/// <summary>
+		/// Get posts written by followings of User, from last to first in time.
+		/// </summary>
+		/// <param name="userId">User ID.</param>
+		/// <param name="skip">How many posts to skip. Default is 0.</param>
+		/// <param name="count">How many posts to get. Default is 20.</param>
+		/// <returns></returns>
 		[HttpGet]
-		[Route("{userId}/feed")]
-		public async Task<IActionResult> GetFeed(int userId, int skip = 0, int count = 20)
+		[Route("posts/feed")]
+		[ProducesResponseType(typeof(IEnumerable<Post>), 200)]
+		[ProducesResponseType(404)]
+		public async Task<IActionResult> GetFeed(int userId, int? skip = 0, int? count = 20)
 		{
-			IEnumerable<Post> posts = await _postDataSource.ReadFeedAsync(userId, skip, count);
+			if (await _userDataSource.Read(userId) == null)
+			{
+				return NotFound();
+			}
+
+			IEnumerable<Post> posts = await _postDataSource.ReadFeedAsync(
+				userId, skip.Value, count.Value);
 
 			return Ok(posts);
 		}
 
+		/// <summary>
+		/// Get posts written by specified User, from last to first in time.
+		/// </summary>
+		/// <param name="userId">User ID.</param>
+		/// <param name="skip">How many posts to skip. Default is 0.</param>
+		/// <param name="count">How many posts to get. Default is 20.</param>
 		[HttpGet]
-		[Route("{userId}/posts")]
-		public async Task<IActionResult> GetPosts(int userId, int skip = 0, int count = 20)
+		[Route("posts/wall")]
+		[ProducesResponseType(typeof(IEnumerable<Post>), 200)]
+		[ProducesResponseType(404)]
+		public async Task<IActionResult> GetPosts(int userId, int? skip = 0, int? count = 20)
 		{
-			IEnumerable<Post> posts = await _postDataSource.ReadWallAsync(userId, skip, count);
+			if (await _userDataSource.Read(userId) == null)
+			{
+				return NotFound();
+			}
+
+			IEnumerable<Post> posts = await _postDataSource.ReadWallAsync(
+				userId, skip.Value, count.Value);
 
 			return Ok(posts);
-		}
-
-		[HttpPost]
-		[Route("me/posts")]
-		public async Task<IActionResult> CreatePost([FromBody]string text)
-		{
-			int currentUserId = this.GetCurrentUserId();
-
-			Post post = await _postDataSource.Create(currentUserId, text);
-
-			return Ok();
-		}
-
-		[HttpPut]
-		[Route("me/posts/{id}/image")]
-		public async Task<IActionResult> PutPostImage(int id, IFormFile formFile)
-		{
-			if (!_imageService.IsSupportedFormat(formFile.ContentType, formFile.FileName))
-			{
-				return BadRequest();
-			}
-
-			string fileName = $"{Guid.NewGuid()}.jpg";
-			string url;
-
-			using (Stream originalImageStream = formFile.OpenReadStream())
-			using (Stream resizedImageStream = new MemoryStream())
-			{
-				_imageService.ResizePostImage(originalImageStream, resizedImageStream);
-				url = await _storageService.UploadPostImageAsync(resizedImageStream, fileName);
-			}
-
-			int currentUserId = this.GetCurrentUserId();
-
-			await _postDataSource.UpdateImage(id, currentUserId, url);
-
-			return Ok();
 		}
 	}
 }

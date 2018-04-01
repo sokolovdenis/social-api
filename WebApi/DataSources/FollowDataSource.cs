@@ -46,11 +46,12 @@ namespace WebApi.DataSources
 			return users;
 		}
 
-		public async Task Create(int followerId, int followingId)
+		public async Task<bool> Create(int followerId, int followingId)
 		{
+			int rows = 0;
 			await Database.ConnectAsync(async (connection) =>
 			{
-				await connection.ExecuteAsync($@"
+				rows = await connection.ExecuteAsync($@"
 						INSERT INTO [Follow] ([FollowerId], [FollowingId])
 						VALUES (@FollowerId, @FollowingId);
 					",
@@ -60,13 +61,15 @@ namespace WebApi.DataSources
 						FollowingId = followingId
 					});
 			});
+			return rows > 0;
 		}
 
-		public async Task Delete(int followerId, int followingId)
+		public async Task<bool> Delete(int followerId, int followingId)
 		{
+			int rows = 0;
 			await Database.ConnectAsync(async (connection) =>
 			{
-				await connection.ExecuteAsync($@"
+				rows = await connection.ExecuteAsync($@"
 						DELETE FROM [Follow]
 						WHERE [FollowerId] = @FollowerId AND [FollowingId] = @FollowingId;
 					",
@@ -76,6 +79,25 @@ namespace WebApi.DataSources
 						FollowingId = followingId
 					});
 			});
+			return rows > 0;
+		}
+
+		public async Task<bool> Exists(int followerId, int followingId)
+		{
+			bool exists = false;
+			await Database.ConnectAsync(async (connection) =>
+			{
+				exists = null != await connection.QueryFirstOrDefaultAsync<User>($@"
+						SELECT TOP 1 [User].* FROM [Follow]
+						WHERE [FollowerId] = @FollowerId AND [FollowingId] = @FollowingId;
+					",
+					new
+					{
+						FollowerId = followerId,
+						FollowingId = followingId
+					});
+			});
+			return exists;
 		}
 
 		public static async Task Deploy_V01(IDbConnection connection, IDbTransaction transaction)

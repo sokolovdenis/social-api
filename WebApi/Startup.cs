@@ -1,4 +1,7 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using System;
+using System.IO;
+using System.Reflection;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.Extensions.Configuration;
@@ -6,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Swashbuckle.AspNetCore.Swagger;
 using WebApi.DataSources;
 using WebApi.Infrastructure;
+using WebApi.Infrastructure.Swagger;
 
 namespace WebApi
 {
@@ -56,6 +60,14 @@ namespace WebApi
 			services.AddSwaggerGen(c =>
 			{
 				c.SwaggerDoc("v1", new Info { Title = "Social API", Version = "v1" });
+				c.IncludeXmlComments(Path.Combine(
+					AppContext.BaseDirectory, 
+					Assembly.GetEntryAssembly().GetName().Name + ".xml"));
+
+				c.OperationFilter<JsonOperationFilter>();
+				c.OperationFilter<AuthResponsesOperationFilter>();
+				c.OperationFilter<FormFileOperationFilter>();
+				c.OperationFilter<ResponseCodeOperationFilter>();
 			});
 
 			services.AddCors();

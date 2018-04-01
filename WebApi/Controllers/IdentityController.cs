@@ -25,8 +25,14 @@ namespace WebApi.Controllers
 			_jwtAuthenticationService = jwtAuthSrv ?? throw new ArgumentNullException(nameof(jwtAuthSrv));
 		}
 
+		/// <summary>
+		/// Sign in and get API token.
+		/// </summary>
+		/// <param name="request">Sign In Request.</param>
 		[HttpPost]
 		[Route("signin")]
+		[ProducesResponseType(typeof(TokenResponse), 200)]
+		[ProducesResponseType(400)]
 		public async Task<IActionResult> SignIn([FromBody]SignInRequest request)
 		{
 			Guid id = _identityService.GenerateIdentityHash(request.Email);
@@ -44,9 +50,16 @@ namespace WebApi.Controllers
 			return Ok(tokenResponse);
 		}
 
+		/// <summary>
+		/// Sign up and get API token.
+		/// </summary>
+		/// <param name="request">Sign Up Request.</param>
 		[HttpPost]
 		[Route("signup")]
-		public async Task<IActionResult> SignUp([FromBody]SignUpRequest request)
+		[ProducesResponseType(typeof(TokenResponse), 200)]
+		[ProducesResponseType(400)]
+		[ProducesResponseType(409)]
+		public async Task<IActionResult> SignUp([FromBody] SignUpRequest request)
 		{
 			Guid id = _identityService.GenerateIdentityHash(request.Email);
 
@@ -54,7 +67,7 @@ namespace WebApi.Controllers
 
 			if (identity != null)
 			{
-				return StatusCode((int)HttpStatusCode.Conflict, "Email already been used.");
+				return StatusCode((int)HttpStatusCode.Conflict, "Email is already used.");
 			}
 
 			_identityService.GeneratePasswordHashAndSalt(
