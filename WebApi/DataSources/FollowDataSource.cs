@@ -88,7 +88,7 @@ namespace WebApi.DataSources
 			await Database.ConnectAsync(async (connection) =>
 			{
 				exists = null != await connection.QueryFirstOrDefaultAsync<User>($@"
-						SELECT TOP 1 [User].* FROM [Follow]
+						SELECT TOP 1 * FROM [Follow]
 						WHERE [FollowerId] = @FollowerId AND [FollowingId] = @FollowingId;
 					",
 					new
