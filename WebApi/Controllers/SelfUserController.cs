@@ -99,6 +99,7 @@ namespace WebApi.Controllers
 		/// <param name="file">Photo.</param>
 		[HttpPut]
 		[Route("photo")]
+		[ProducesResponseType(typeof(User), 200)]
 		[ProducesResponseType(400)]
 		public async Task<IActionResult> PutPhoto([FromForm]IFormFile file)
 		{
