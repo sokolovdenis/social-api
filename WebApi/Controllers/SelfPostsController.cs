@@ -37,7 +37,7 @@ namespace WebApi.Controllers
 		[ProducesResponseType(typeof(Post), 200)]
 		[ProducesResponseType(400)]
 		[ProducesResponseType(404)]
-		public async Task<IActionResult> CreatePost(PostCreateRequest request)
+		public async Task<IActionResult> CreatePost([FromBody]PostCreateRequest request)
 		{
 			int currentUserId = this.GetCurrentUserId();
 
