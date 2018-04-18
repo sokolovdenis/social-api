@@ -45,7 +45,7 @@ namespace WebApi.DataSources
 						SELECT * FROM [Post]
 						INNER JOIN [User] ON [Post].[UserId] = [User].[Id]
 						WHERE [UserId] IN 
-							(SELECT [FollowingId] WHERE [FollowerId] = @UserId)
+							(SELECT [FollowingId] FROM [Follow] WHERE [FollowerId] = @UserId)
 						ORDER BY [DateTime] DESC
 						OFFSET {skip} ROWS
 						FETCH NEXT {count} ROWS ONLY;
