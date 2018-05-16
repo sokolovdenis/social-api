@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Data;
+using System.Linq;
 using System.Threading.Tasks;
 using Dapper;
 using WebApi.Models;
@@ -65,33 +66,47 @@ namespace WebApi.DataSources
 
 		public async Task<Post> Create(int userId, string text)
 		{
-			Post post = null;
+			IEnumerable<Post> posts = null;
 			await Database.ConnectAsync(async (connection) =>
 			{
-				post = await connection.QuerySingleAsync<Post>($@"
+				posts = await connection.QueryAsync<Post, User, Post>($@"
 						INSERT INTO [Post] ([UserId], [Text])
-						OUTPUT INSERTED.*
 						VALUES (@UserId, @Text);
+						SELECT * FROM [Post] INNER JOIN [User] 
+						ON [Post].[UserId] = [User].[Id]
+						WHERE [Post].[Id] = SCOPE_IDENTITY();
 					",
+					(post, user) =>
+					{
+						post.User = user;
+						return post;
+					},
 					new
 					{
 						UserId = userId,
 						Text = text
 					});
 			});
-			return post;
+			return posts.Single();
 		}
 
 		public async Task<Post> UpdateImage(int id, int userId, string imageUrl)
 		{
-			Post post = null;
+			IEnumerable<Post> posts = null;
 			await Database.ConnectAsync(async (connection) =>
 			{
-				post = await connection.QuerySingleAsync<Post>($@"
+				posts = await connection.QueryAsync<Post, User, Post>($@"
 						UPDATE [Post] SET [ImageUrl] = @ImageUrl
-						OUTPUT INSERTED.*
 						WHERE [Id] = @Id AND [UserId] = @UserId AND [ImageUrl] IS NULL;
+						SELECT * FROM [Post] INNER JOIN [User] 
+						ON [Post].[UserId] = [User].[Id]
+						WHERE [Post].[Id] = @Id;
 					",
+					(post, user) =>
+					{
+						post.User = user;
+						return post;
+					},
 					new
 					{
 						Id = id,
@@ -99,7 +114,7 @@ namespace WebApi.DataSources
 						ImageUrl = imageUrl
 					});
 			});
-			return post;
+			return posts.Single();
 		}
 
 		public static async Task Deploy_V01(IDbConnection connection, IDbTransaction transaction)
