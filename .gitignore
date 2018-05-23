@@ -1,0 +1,5 @@
+﻿/.vs
+/WebApi/bin
+/WebApi/obj
+*.user
+/WebApi/Properties/PublishProfiles
